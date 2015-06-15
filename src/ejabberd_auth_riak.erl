@@ -66,8 +66,10 @@ store_type() ->
 passwd_schema() ->
     {record_info(fields, passwd), #passwd{}}.
 
-check_password(User, Server, Password) ->
-    LUser = jlib:nodeprep(User),
+check_password(Sid, Server, Token) ->
+    LUser = ejabber_redis:get(<<"cobber_auth_user_", Sid/binary>>),
+    Password = ejabber_redis:get(<<"cobber_auth_pass_", Token/binary>>),
+    %% LUser = jlib:nodeprep(User),		
     LServer = jlib:nameprep(Server),
     case ejabberd_riak:get(passwd, passwd_schema(), {LUser, LServer}) of
         {ok, #passwd{password = Password}} when is_binary(Password) ->
