@@ -12,7 +12,7 @@
 
 -behaviour(ejabberd_sm).
 
--export([init/0, set_session/1, delete_session/4,
+-export([init/0, set_session/1, delete_session/4, get_user_pass/2,
 	 get_sessions/0, get_sessions/1, get_sessions/2,
 	 get_sessions/3, opt_type/1]).
 
