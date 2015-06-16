@@ -67,17 +67,19 @@ passwd_schema() ->
     {record_info(fields, passwd), #passwd{}}.
 
 check_password(Sid, Server, Token) ->
-    LUser = ejabber_redis:get(<<"cobber_auth_user_", Sid/binary>>),
-    Password = ejabber_redis:get(<<"cobber_auth_pass_", Token/binary>>),
-    %% LUser = jlib:nodeprep(User),		
-    LServer = jlib:nameprep(Server),
-    case ejabberd_riak:get(passwd, passwd_schema(), {LUser, LServer}) of
-        {ok, #passwd{password = Password}} when is_binary(Password) ->
-            Password /= <<"">>;
-        {ok, #passwd{password = Scram}} when is_record(Scram, scram) ->
-            is_password_scram_valid(Password, Scram);
-        _ ->
-            false
+    case ejabberd_sm_redis:get_user_pass(Sid, Token) of 
+	[LUser, Password] ->
+	    LServer = jlib:nameprep(Server),
+	    case ejabberd_riak:get(passwd, passwd_schema(), {LUser, LServer}) of
+		{ok, #passwd{password = Password}} when is_binary(Password) ->
+		    Password /= <<"">>;
+		{ok, #passwd{password = Scram}} when is_record(Scram, scram) ->
+		    is_password_scram_valid(Password, Scram);
+		_ ->
+		    false
+	    end;
+	[] ->
+	    false
     end.
 
 check_password(User, Server, Password, Digest,

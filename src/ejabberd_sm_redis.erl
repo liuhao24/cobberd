@@ -102,6 +102,17 @@ delete_session(LUser, LServer, _LResource, SID) ->
 	    {error, notfound}
     end.
 
+get_user_pass(Sid, Token)->
+    Key1 = <<"cobber_auth_user_", Sid/binary>>,
+    Key2 = <<"cobber_auth_pass_", Token/binary>>,
+    case eredis:q(?PROCNAME, ["MGET"| [Key1, Key2] ]) of
+	{ok, Vals} ->
+	    Vals;
+	Err ->
+	    ?ERROR_MSG("failed to get user and password from redis: ~p", [Err]),
+	    []
+    end.
+
 -spec get_sessions() -> [#session{}].
 get_sessions() ->
     lists:flatmap(
