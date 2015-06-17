@@ -28,6 +28,7 @@
 {zlib, @zlib@}.
 {riak, @riak@}.
 {redis, @redis@}.
+{mongodb, @mongodb@}.
 {json, @json@}.
 {elixir, @elixir@}.
 {lager, @lager@}.
