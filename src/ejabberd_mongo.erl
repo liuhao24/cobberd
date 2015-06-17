@@ -48,16 +48,24 @@ is_mongo_configured(Host) ->
     ServerConfigured or PortConfigured.
 
 do_start() ->
-    SupervisorName = ?MODULE,
-    ChildSpec =
-	{SupervisorName,
-	 {?MODULE, start_link, []},
-	 transient,
-	 infinity,
-	 supervisor,
-	 [?MODULE]},
+    %% SupervisorName = ?MODULE,	       
+    %% ChildSpec =
+    %% 	{SupervisorName,
+    %% 	 {?MODULE, start_link, []},
+    %% 	 transient,
+    %% 	 infinity,
+    %% 	 supervisor,
+    %% 	 [?MODULE]},
+    PoolSize = get_pool_size(),
+    Server = get_mongo_server(),
+    Port = get_mongo_port(),
+    Db = get_mongo_db(),
+    Maxoverflow = get_max_overflow(),
+    ChildSpec = mongo_pool:child_spec(?MONGOPOOL, PoolSize, Server, Port, Db, Maxoverflow),
+
     case supervisor:start_child(ejabberd_sup, ChildSpec) of
-	{ok, _PID} ->
+	{ok, PID} ->
+	    ?INFO_MSG("start mongo pool: ~p ~n", [PID]),
 	    ok;
 	_Error ->
 	    ?ERROR_MSG("Start of supervisor ~p failed:~n~p~nRetrying...~n",
@@ -104,7 +112,7 @@ init([]) ->
     case supervisor:start_child(ejabberd_sup, ChildSpec) of
 	{ok, _PID} ->
 	    ok;
-		_Error ->
+	_Error ->
 	    ?ERROR_MSG("Start of supervisor ~p failed:~n~p~nRetrying...~n",
                        [mongopool, _Error]),
             timer:sleep(5000),
