@@ -1,10 +1,14 @@
 -module(ejabberd_mongo).
+
+-behaviour(ejabberd_config).
+
 -author('liuhao@worktile.com').
 
 %% API
 -export([start/0,
          start_link/0,
-	 init/1
+	 init/1,
+	 get_passwd/1
 	]).
 
 -include("ejabberd.hrl").
