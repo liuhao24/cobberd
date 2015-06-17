@@ -142,6 +142,9 @@ get_mongo_db() ->
       fun(DB) when is_atom(DB) -> DB end,
       test).
 
+iolist_to_list(IOList) ->
+    binary_to_list(iolist_to_binary(IOList)).
+
 objectid_to_binary({Id}) -> objectid_to_binary(Id, []).
 
 objectid_to_binary(<<>>, Result) ->
