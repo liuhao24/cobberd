@@ -8,6 +8,7 @@
 -export([start/0,
          start_link/0,
 	 init/1,
+	 opt_type/1,
 	 get_passwd/1
 	]).
 
@@ -88,16 +89,16 @@ init([]) ->
     Server = get_mongo_server(),
     Port = get_mongo_port(),
     Db = get_mongo_db(),
-    User = ejabberd_config:get_option(
-	     mongo_user,
-	     fun(S) ->
-		     iolist_to_binary(S)
-	     end, <<"">>),
-    Pwd = ejabberd_config:get_option(
-	     mongo_pwd,
-	     fun(S) ->
-		     iolist_to_binary(S)
-	     end, <<"">>),
+    %% User = ejabberd_config:get_option(
+    %% 	     mongo_user,
+    %% 	     fun(S) ->
+    %% 		     iolist_to_binary(S)
+    %% 	     end, <<"">>),
+    %% Pwd = ejabberd_config:get_option(
+    %% 	     mongo_pwd,
+    %% 	     fun(S) ->
+    %% 		     iolist_to_binary(S)
+    %% 	     end, <<"">>),
     Maxoverflow = get_max_overflow(),
     ChildSpec = mongo_pool:child_spec(?MONGOPOOL, PoolSize, Server, Port, Db, Maxoverflow),
     case supervisor:start_child(ejabberd_sup, ChildSpec) of
@@ -112,7 +113,7 @@ init([]) ->
 
 get_max_overflow() ->
     ejabberd_config:get_option(
-      max_overflow,
+      mongo_max_overflow,
       fun(N) when is_integer(N), N >= 1 -> N end,
       ?DEFAULT_MAX_OVERFLOW).
 
@@ -159,3 +160,17 @@ binary_to_objectid(<<>>, Result) ->
     {list_to_binary(lists:reverse(Result))};
 binary_to_objectid(<<BS:2/binary, Bin/binary>>, Result) ->
     binary_to_objectid(Bin, [erlang:binary_to_integer(BS, 16)|Result]).
+
+opt_type(mongo_max_overflow) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(mongo_db) ->
+    fun (I) when is_atom(I) -> I end;
+opt_type(mongo_password) -> fun iolist_to_list/1;
+opt_type(mongo_port) ->
+    fun (P) when is_integer(P), P > 0, P < 65536 -> P end;
+opt_type(mongo_pool_size) ->
+    fun (I) when is_integer(I), I > 0 -> I end;
+opt_type(mongo_server) -> fun iolist_to_list/1;
+opt_type(_) ->
+    [mongo_pool_size, mongo_db, mongo_pwd, mongo_max_overflow,
+     mongo_port, mongo_server].
