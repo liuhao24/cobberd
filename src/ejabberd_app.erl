@@ -44,6 +44,8 @@ start(normal, _Args) ->
     ejabberd_logger:start(),
     write_pid_file(),
     start_apps(),
+    ok = application:start(bson),
+    ok = application:start(mongodb),
     ejabberd:check_app(ejabberd),
     randoms:start(),
     db_init(),

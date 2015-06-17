@@ -9,6 +9,8 @@
          start_link/0,
 	 init/1,
 	 opt_type/1,
+	 objectid_to_binary/1,
+	 binary_to_objectid/1,         
 	 get_passwd/1
 	]).
 
@@ -81,7 +83,7 @@ get_passwd(Uid) ->
     Doc = mongo_pool:find_one(?MONGOPOOL, ?COLL_USER, {'_id', binary_to_objectid(Uid)}, {'pass', 1}),
     case Doc of
 	{Doc1} ->
-	    case bson:lookup(members, Doc1) of
+	    case bson:lookup(pass, Doc1) of
 		{M}  ->
 		    M;
 		_ ->
