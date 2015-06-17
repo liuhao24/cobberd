@@ -48,7 +48,7 @@ is_mongo_configured(Host) ->
     ServerConfigured or PortConfigured.
 
 do_start() ->
-    %% SupervisorName = ?MODULE,	       
+    SupervisorName = ?MODULE,	       
     %% ChildSpec =
     %% 	{SupervisorName,
     %% 	 {?MODULE, start_link, []},
