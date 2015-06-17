@@ -595,6 +595,7 @@ iconv
 elixir
 json
 redis
+mongodb
 riak
 zlib
 pam
@@ -690,6 +691,7 @@ enable_pam
 enable_zlib
 enable_riak
 enable_redis
+enable_mongodb
 enable_json
 enable_elixir
 enable_iconv
@@ -2941,8 +2943,8 @@ fi
 # Check whether --enable-all was given.
 if test "${enable_all+set}" = set; then :
   enableval=$enable_all; case "${enableval}" in
-  yes) nif=true odbc=true mysql=true pgsql=true sqlite=true pam=true zlib=true riak=true redis=true json=true elixir=true iconv=true debug=true lager=true tools=true ;;
-  no) nif=false odbc=false mysql=false pgsql=false sqlite=false pam=false zlib=false riak=false redis=false json=false elixir=false iconv=false debug=false lager=false tools=false ;;
+  yes) nif=true odbc=true mysql=true pgsql=true sqlite=true pam=true zlib=true riak=true redis=true mongodb=true json=true elixir=true iconv=true debug=true lager=true tools=true ;;
+  no) nif=false odbc=false mysql=false pgsql=false sqlite=false pam=false zlib=false riak=false redis=false mongodb=true json=false elixir=false iconv=false debug=false lager=false tools=false ;;
   *) as_fn_error $? "bad value ${enableval} for --enable-all" "$LINENO" 5 ;;
 esac
 fi
@@ -3067,6 +3069,16 @@ else
   if test "x$redis" = "x"; then redis=false; fi
 fi
 
+# Check whether --enable-mongodb was given.                                                                                                                                                                                           
+if test "${enable_mongodb+set}" = set; then :
+  enableval=$enable_mongodb; case "${enableval}" in
+  yes) mongodb=true ;;
+  no)  mongodb=false ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-mongodb" "$LINENO" 5 ;;
+esac
+else
+  if test "x$mongodb" = "x"; then mongodb=false; fi
+fi
 
 # Check whether --enable-json was given.
 if test "${enable_json+set}" = set; then :
