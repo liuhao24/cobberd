@@ -161,6 +161,9 @@ binary_to_objectid(<<>>, Result) ->
 binary_to_objectid(<<BS:2/binary, Bin/binary>>, Result) ->
     binary_to_objectid(Bin, [erlang:binary_to_integer(BS, 16)|Result]).
 
+us_to_key({LUser, LServer}) ->
+    <<"ejabberd:sm:", LUser/binary, "@", LServer/binary>>.
+
 opt_type(mongo_max_overflow) ->
     fun (I) when is_integer(I), I > 0 -> I end;
 opt_type(mongo_db) ->
