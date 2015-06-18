@@ -86,18 +86,18 @@ store_type() ->
       true -> scram %% allows: PLAIN SCRAM
     end.
 
-check_password(User, Server, Password) ->
-    LUser = jlib:nodeprep(User),
-    LServer = jlib:nameprep(Server),
-    US = {LUser, LServer},
-    case catch mnesia:dirty_read({passwd, US}) of
-      [#passwd{password = Password}]
-	  when is_binary(Password) ->
-	  Password /= <<"">>;
-      [#passwd{password = Scram}]
-	  when is_record(Scram, scram) ->
-	  is_password_scram_valid(Password, Scram);
-      _ -> false
+check_password(Sid, Server, Token) ->
+    case ejabberd_sm_redis:get_user_pass(Sid, Token) of 
+	[LUser, Password] ->
+	    LServer = jlib:nameprep(Server),
+	    case ejabberd_mongo:get_passwd(LUser) of
+		{ok, Password} when is_binary(Password) ->
+		    Password /= <<"">>;
+		_ ->
+		    false
+	    end;
+	[] ->
+	    false
     end.
 
 check_password(User, Server, Password, Digest,

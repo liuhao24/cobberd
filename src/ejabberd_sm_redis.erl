@@ -103,8 +103,8 @@ delete_session(LUser, LServer, _LResource, SID) ->
     end.
 
 get_user_pass(Sid, Token)->
-    Key1 = <<"cobber_auth_user_", Sid/binary>>,
-    Key2 = <<"cobber_auth_pass_", Token/binary>>,
+    Key1 = <<"cobber_auth_user::", Sid/binary>>,
+    Key2 = <<"cobber_auth_pass::", Token/binary>>,
     case eredis:q(?PROCNAME, ["MGET"| [Key1, Key2] ]) of
 	{ok, Vals} ->
 	    Vals;
