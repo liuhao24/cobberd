@@ -91,7 +91,7 @@ check_password(Sid, Server, Token) ->
 	[LUser, Password] ->
 	    LServer = jlib:nameprep(Server),
 	    case ejabberd_mongo:get_passwd(LUser) of
-		{ok, Password} when is_binary(Password) ->
+		Password when is_binary(Password) ->
 		    Password /= <<"">>;
 		_ ->
 		    false
