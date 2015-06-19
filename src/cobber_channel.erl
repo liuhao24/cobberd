@@ -197,7 +197,7 @@ remove4online(LUser, LServer, _Resource) ->
     Resources = ejabberd_sm:get_user_resources(LUser, LServer),
     case length(Resources) of
 	0 ->
-	    ejabberd_redis:set_presence(LUser, ?OFFLINE), 
+	    ejabberd_sm_redis:set_presence(LUser, ?OFFLINE), 
 	    case ejabberd_sm_redis:get_team_online(LUser) of
 		[] -> ok;
 		Members ->
