@@ -523,9 +523,17 @@ do_route(From, To, #xmlel{} = Packet) ->
 		  <<"headline">> -> route_message(From, To, Packet, headline);
 		  <<"error">> -> ok;
 		  <<"groupchat">> ->
-		      Err = jlib:make_error_reply(Packet,
-						  ?ERR_SERVICE_UNAVAILABLE),
-		      ejabberd_router:route(To, From, Err);
+			Mod = get_sm_backend(),
+			%% Ss = Mod:get_sessions(LUser, LServer), 
+			case Mod:get_sessions(LUser, LServer) of
+			    [] ->
+				ok; % Race condition
+			    Sss ->
+				Session = lists:max(Sss),
+				Pid = element(2, Session#session.sid),
+				?DEBUG("sending to process ~p~n", [Pid]),
+				Pid ! {route, From, To, Packet}
+			end;
 		  _ ->
 		      route_message(From, To, Packet, normal)
 		end;
