@@ -2,7 +2,7 @@
 
 -behaviour(ejabberd_config).
 
--author('liuhao@worktile.com').
+-author('liuhao').
 
 %% API
 -export([start/0,
@@ -11,7 +11,11 @@
 	 opt_type/1,
 	 objectid_to_binary/1,
 	 binary_to_objectid/1,         
-	 get_passwd/1
+	 get_passwd/1,
+	 get_team/1,
+	 get_team_member/1,
+	 get_channel_member/1,
+	 get_team_by_channel/1
 	]).
 
 -include("ejabberd.hrl").
@@ -27,7 +31,10 @@
 % a timeout error to the request
 -define(CONNECT_TIMEOUT, 500). % milliseconds
 -define(MONGOPOOL, mongopool).
+-define(MAX, 50000).
 -define(COLL_USER, user).
+-define(COLL_TEAM, team).
+-define(COLL_CHANNEL, channel).
 
 start() ->
     case lists:any(
@@ -93,6 +100,73 @@ get_passwd(Uid) ->
 	    <<"">>
     end.
 
+get_team(Uid) ->
+    Doc = mongo_pool:find_one(?MONGOPOOL, ?COLL_USER, {'_id', binary_to_objectid(Uid)}, {'team', 1}),
+    case Doc of
+	{Doc1} ->
+	    case bson:lookup(team, Doc1) of
+		{M}  ->
+		    M;
+		_ ->
+		    <<"">>
+	    end;
+	_ ->
+	    <<"">>
+    end.
+
+get_team_by_channel(Cid) ->
+    Doc = mongo_pool:find_one(?MONGOPOOL, ?COLL_CHANNEL, {'_id', binary_to_objectid(Cid)}, {'team', 1}),
+    case Doc of
+	{Doc1} ->
+	    case bson:lookup(team, Doc1) of
+		{Team}  ->
+		    TeamDoc = mongo_pool:find_one(?MONGOPOOL, ?COLL_TEAM, 
+						  {'team', Team}, {'type', 1}),
+		    case TeamDoc of
+			{Doc2} ->
+			    TeamType = case bson:lookup(type, Doc2) of
+					   {Type}  ->   Type;
+					   _ -> 0
+				       end,
+			    [Team, TeamType];
+			_ -> []
+		    end;
+		_ -> []		    
+	    end;
+	_ -> []
+    end.
+
+get_team_member(Team) ->
+    Docs = mongo_pool:find(?MONGOPOOL, ?COLL_USER, {'team', Team}, {'_id', 1}),
+    case Docs of
+	false -> [];
+	none -> [];
+	Cursor ->
+	    Rs = take(Cursor, ?MAX, desc),
+	    [objectid_to_binary(X) || {'_id', X} <- Rs]
+    end.
+
+get_channel_member(Cid) ->
+    case get_team_by_channel(Cid) of
+	[Team, 0] -> 
+	    get_team_member(Team);
+	[Team, _Type] ->
+	    Doc = mongo_pool:find_one(?MONGOPOOL, ?COLL_CHANNEL, {'_id', binary_to_objectid(Cid)}, 
+				  {'members.uid', 1}),
+	    case Doc of
+		{} -> [];
+		{Doc1} ->
+		    case bson:lookup(members, Doc1) of
+			{} -> [];
+			{M} when is_list(M) ->
+			    [X || {uid, X} <- M];
+			_ ->
+			    []
+		    end;
+		_ ->[]
+	    end
+    end.
+
 
 init([]) ->
     PoolSize = get_pool_size(),
@@ -151,6 +225,21 @@ get_mongo_db() ->
       mongo_db,
       fun(DB) when is_atom(DB) -> DB end,
       test).
+
+take(Cursor, Count, Order) ->
+    Result = take_inner(Cursor, Count, []),
+    mc_cursor:close(Cursor),
+    case Order of
+        desc -> Result;
+        asc  -> lists:reverse(Result)
+    end.
+
+take_inner(Cursor, Count, Acc) when Count > 0 ->
+    case mc_cursor:next(Cursor) of
+        {}  -> Acc;
+        {X} -> take_inner(Cursor, Count-1, [X|Acc])
+    end;
+take_inner(_Cursor, _Count, Acc) -> Acc.
 
 iolist_to_list(IOList) ->
     binary_to_list(iolist_to_binary(IOList)).

@@ -13,6 +13,7 @@
 -behaviour(ejabberd_sm).
 
 -export([init/0, set_session/1, delete_session/4, get_user_pass/2,
+	 append2online/2, get_team_online/1, set_presence/2,
 	 get_sessions/0, get_sessions/1, get_sessions/2,
 	 get_sessions/3, opt_type/1]).
 
@@ -22,6 +23,8 @@
 -include("jlib.hrl").
 
 -define(PROCNAME, 'ejabberd_redis_client').
+-define(PRE_TEAM_ONLINE, <<"cobber_online::">>).
+-define(USER_PRESENCE, <<"presence_">>).
 
 %%%===================================================================
 %%% API
@@ -112,6 +115,37 @@ get_user_pass(Sid, Token)->
 	    ?ERROR_MSG("failed to get user and password from redis: ~p", [Err]),
 	    []
     end.
+
+get_team_online(User)->
+    case ejabberd_mongo:get_team(User) of 
+	<<"">> -> [];
+	TeamId ->
+	    Key = <<?PRE_TEAM_ONLINE/binary, TeamId/binary>>,
+	    case eredis:q(?PROCNAME, ["SMEMBERS", Key]) of 
+		{ok, T} when is_list(T)->
+		    T;
+		_ ->
+		    []
+	    end
+    end.
+
+set_presence(User, Presence) ->
+    Key = <<?USER_PRESENCE/binary, User/binary>>, 
+    eredis:q(?PROCNAME, ["SET", Key, Presence]),
+    case Presence of 
+	0 ->
+	    case ejabberd_mongo:get_team(User) of 
+		<<"">> -> [];
+		TeamId ->
+		    Key = <<?PRE_TEAM_ONLINE/binary, TeamId/binary>>,
+		    eredis:q(?PROCNAME, ["SREM", Key])
+	    end;
+	_Status -> ok
+    end.
+
+append2online(TeamId, Value)->
+    Key = <<?PRE_TEAM_ONLINE/binary, TeamId/binary>>,
+    eredis:q(?PROCNAME, ["SADD", Key, Value]).
 
 -spec get_sessions() -> [#session{}].
 get_sessions() ->
