@@ -86,9 +86,10 @@ store_type() ->
       true -> scram %% allows: PLAIN SCRAM
     end.
 
-check_password(Sid, Server, Token) ->
-    case ejabberd_sm_redis:get_user_pass(Sid, Token) of 
-	[LUser, Password] ->
+check_password(Uid, Server, Token) ->
+    case ejabberd_sm_redis:get_user_pass(Token) of 
+	[Password] ->
+	    LUser = jlib:nodeprep(Uid),
 	    LServer = jlib:nameprep(Server),
 	    case ejabberd_mongo:get_passwd(LUser) of
 		Password when is_binary(Password) ->

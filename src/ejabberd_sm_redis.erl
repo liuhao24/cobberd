@@ -12,7 +12,7 @@
 
 -behaviour(ejabberd_sm).
 
--export([init/0, set_session/1, delete_session/4, get_user_pass/2,
+-export([init/0, set_session/1, delete_session/4, get_user_pass/1,
 	 append2online/2, get_team_online/1, set_presence/2,
 	 get_sessions/0, get_sessions/1, get_sessions/2,
 	 get_sessions/3, opt_type/1]).
@@ -105,10 +105,9 @@ delete_session(LUser, LServer, _LResource, SID) ->
 	    {error, notfound}
     end.
 
-get_user_pass(Sid, Token)->
-    Key1 = <<"cobber_auth_user::", Sid/binary>>,
+get_user_pass(Token)->
     Key2 = <<"cobber_auth_pass::", Token/binary>>,
-    case eredis:q(?PROCNAME, ["MGET"| [Key1, Key2] ]) of
+    case eredis:q(?PROCNAME, ["GET", Key2 ]) of
 	{ok, Vals} ->
 	    Vals;
 	Err ->
