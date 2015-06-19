@@ -115,22 +115,14 @@ get_team(Uid) ->
     end.
 
 get_team_by_channel(Cid) ->
-    Doc = mongo_pool:find_one(?MONGOPOOL, ?COLL_CHANNEL, {'_id', binary_to_objectid(Cid)}, {'team', 1}),
+    Doc = mongo_pool:find_one(?MONGOPOOL, ?COLL_CHANNEL, {'_id', binary_to_objectid(Cid)}, {'team', 1, 'type', 1}),
     case Doc of
 	{Doc1} ->
-	    case bson:lookup(team, Doc1) of
-		{Team}  ->
-		    TeamDoc = mongo_pool:find_one(?MONGOPOOL, ?COLL_TEAM, 
-						  {'team', Team}, {'type', 1}),
-		    case TeamDoc of
-			{Doc2} ->
-			    TeamType = case bson:lookup(type, Doc2) of
-					   {Type}  ->   Type;
-					   _ -> 0
-				       end,
-			    [Team, TeamType];
-			_ -> []
-		    end;
+	    TeamDoc = bson:lookup(team, Doc1),
+	    TypeDoc = bson:lookup(type, Doc1),
+	    case {TeamDoc, TypeDoc} of
+		{{Team},{TeamType}}  ->
+		    [Team, TeamType];
 		_ -> []		    
 	    end;
 	_ -> []
@@ -164,7 +156,8 @@ get_channel_member(Cid) ->
 			    []
 		    end;
 		_ ->[]
-	    end
+	    end;
+	_ -> []
     end.
 
 
