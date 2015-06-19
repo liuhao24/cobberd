@@ -109,7 +109,7 @@ get_user_pass(Token)->
     Key2 = <<"cobber_auth_pass::", Token/binary>>,
     case eredis:q(?PROCNAME, ["GET", Key2 ]) of
 	{ok, Vals} ->
-	    Vals;
+	    [Vals];
 	Err ->
 	    ?ERROR_MSG("failed to get user and password from redis: ~p", [Err]),
 	    []
